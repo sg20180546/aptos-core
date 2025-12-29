@@ -643,7 +643,8 @@ errors = []
 warnings = []
 
 with tempfile.TemporaryDirectory() as tmpdirname:
-    tmpdirname="/home/femu/f2fs_fdp_mount/p1"
+    # tmpdirname="/home/femu/f2fs_fdp_mount/p1"
+    tmpdirname="/home/femu/tenant0"
     print("sj @@@ tmpdirname @@@@@",tmpdirname)
     move_e2e_benchmark_failed = False
     if not SKIP_MOVE_E2E:

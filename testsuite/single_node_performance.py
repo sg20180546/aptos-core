@@ -643,6 +643,7 @@ errors = []
 warnings = []
 
 with tempfile.TemporaryDirectory() as tmpdirname:
+    print("sj @@@ tmpdirname @@@@@",tmpdirname)
     move_e2e_benchmark_failed = False
     if not SKIP_MOVE_E2E:
         execute_command(f"cargo build {BUILD_FLAG} --package aptos-move-e2e-benchmark")

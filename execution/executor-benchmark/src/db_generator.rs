@@ -43,9 +43,9 @@ pub fn create_db_with_accounts<V>(
 
     println!("Initializing...");
 
-    if db_dir.as_ref().exists() {
-        panic!("data-dir exists already.");
-    }
+    // if db_dir.as_ref().exists() {
+    //     panic!("data-dir exists already.");
+    // }
     // create if not exists
     fs::create_dir_all(db_dir.as_ref()).unwrap();
 

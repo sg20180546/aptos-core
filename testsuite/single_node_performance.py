@@ -417,6 +417,22 @@ class RunResults:
     fraction_of_execution_in_inner_block_executor: float
     fraction_in_ledger_update: float
     fraction_in_commit: float
+    #sj: Added tail latency percentiles (in microseconds)
+    p10_latency_us: float = 0
+    p20_latency_us: float = 0
+    p30_latency_us: float = 0
+    p40_latency_us: float = 0
+    p50_latency_us: float = 0
+    p60_latency_us: float = 0
+    p70_latency_us: float = 0
+    p75_latency_us: float = 0
+    p80_latency_us: float = 0
+    p90_latency_us: float = 0
+    p95_latency_us: float = 0
+    p99_latency_us: float = 0
+    p99_9_latency_us: float = 0
+    p99_99_latency_us: float = 0
+    p99_999_latency_us: float = 0
 
 
 @dataclass
@@ -533,6 +549,87 @@ def extract_run_results(
             ]
         )
 
+        #sj: Extract tail latency percentiles (in microseconds)
+        p10_latency_us = 0.0
+        p20_latency_us = 0.0
+        p30_latency_us = 0.0
+        p40_latency_us = 0.0
+        p50_latency_us = 0.0
+        p60_latency_us = 0.0
+        p70_latency_us = 0.0
+        p75_latency_us = 0.0
+        p80_latency_us = 0.0
+        p90_latency_us = 0.0
+        p95_latency_us = 0.0
+        p99_latency_us = 0.0
+        p99_9_latency_us = 0.0
+        p99_99_latency_us = 0.0
+        p99_999_latency_us = 0.0
+
+        # Try to extract percentiles from output
+        try:
+            p10_match = re.findall(prefix + r" p10: (\d+\.?\d*) us", output)
+            if p10_match:
+                p10_latency_us = float(p10_match[-1])
+
+            p20_match = re.findall(prefix + r" p20: (\d+\.?\d*) us", output)
+            if p20_match:
+                p20_latency_us = float(p20_match[-1])
+
+            p30_match = re.findall(prefix + r" p30: (\d+\.?\d*) us", output)
+            if p30_match:
+                p30_latency_us = float(p30_match[-1])
+
+            p40_match = re.findall(prefix + r" p40: (\d+\.?\d*) us", output)
+            if p40_match:
+                p40_latency_us = float(p40_match[-1])
+
+            p50_match = re.findall(prefix + r" p50: (\d+\.?\d*) us", output)
+            if p50_match:
+                p50_latency_us = float(p50_match[-1])
+
+            p60_match = re.findall(prefix + r" p60: (\d+\.?\d*) us", output)
+            if p60_match:
+                p60_latency_us = float(p60_match[-1])
+
+            p70_match = re.findall(prefix + r" p70: (\d+\.?\d*) us", output)
+            if p70_match:
+                p70_latency_us = float(p70_match[-1])
+
+            p75_match = re.findall(prefix + r" p75: (\d+\.?\d*) us", output)
+            if p75_match:
+                p75_latency_us = float(p75_match[-1])
+
+            p80_match = re.findall(prefix + r" p80: (\d+\.?\d*) us", output)
+            if p80_match:
+                p80_latency_us = float(p80_match[-1])
+
+            p90_match = re.findall(prefix + r" p90: (\d+\.?\d*) us", output)
+            if p90_match:
+                p90_latency_us = float(p90_match[-1])
+
+            p95_match = re.findall(prefix + r" p95: (\d+\.?\d*) us", output)
+            if p95_match:
+                p95_latency_us = float(p95_match[-1])
+
+            p99_match = re.findall(prefix + r" p99: (\d+\.?\d*) us", output)
+            if p99_match:
+                p99_latency_us = float(p99_match[-1])
+
+            p99_9_match = re.findall(prefix + r" p99\.9: (\d+\.?\d*) us", output)
+            if p99_9_match:
+                p99_9_latency_us = float(p99_9_match[-1])
+
+            p99_99_match = re.findall(prefix + r" p99\.99: (\d+\.?\d*) us", output)
+            if p99_99_match:
+                p99_99_latency_us = float(p99_99_match[-1])
+
+            p99_999_match = re.findall(prefix + r" p99\.999: (\d+\.?\d*) us", output)
+            if p99_999_match:
+                p99_999_latency_us = float(p99_999_match[-1])
+        except Exception as e:
+            print(f"Warning: Failed to parse tail latencies: {e}")
+
     return RunResults(
         tps=tps,
         gps=gps,
@@ -548,6 +645,21 @@ def extract_run_results(
         fraction_of_execution_in_inner_block_executor=fraction_of_execution_in_inner_block_executor,
         fraction_in_ledger_update=fraction_in_ledger_update,
         fraction_in_commit=fraction_in_commit,
+        p10_latency_us=p10_latency_us,
+        p20_latency_us=p20_latency_us,
+        p30_latency_us=p30_latency_us,
+        p40_latency_us=p40_latency_us,
+        p50_latency_us=p50_latency_us,
+        p60_latency_us=p60_latency_us,
+        p70_latency_us=p70_latency_us,
+        p75_latency_us=p75_latency_us,
+        p80_latency_us=p80_latency_us,
+        p90_latency_us=p90_latency_us,
+        p95_latency_us=p95_latency_us,
+        p99_latency_us=p99_latency_us,
+        p99_9_latency_us=p99_9_latency_us,
+        p99_99_latency_us=p99_99_latency_us,
+        p99_999_latency_us=p99_999_latency_us,
     )
 
 
@@ -597,6 +709,26 @@ def print_table(
                 "out B/s",
             ]
         )
+        #sj: Add tail latency percentile headers
+        headers.extend(
+            [
+                "p10 us",
+                "p20 us",
+                "p30 us",
+                "p40 us",
+                "p50 us",
+                "p60 us",
+                "p70 us",
+                "p75 us",
+                "p80 us",
+                "p90 us",
+                "p95 us",
+                "p99 us",
+                "p99.9 us",
+                "p99.99 us",
+                "p99.999 us",
+            ]
+        )
 
     rows = []
     for result in results:
@@ -642,6 +774,22 @@ def print_table(
             row.append(int(round(result.single_node_result.gpt)))
             row.append(int(round(result.single_node_result.storage_fee_pt)))
             row.append(int(round(result.single_node_result.output_bps)))
+            #sj: Add tail latency percentile values
+            row.append(int(round(result.single_node_result.p10_latency_us)))
+            row.append(int(round(result.single_node_result.p20_latency_us)))
+            row.append(int(round(result.single_node_result.p30_latency_us)))
+            row.append(int(round(result.single_node_result.p40_latency_us)))
+            row.append(int(round(result.single_node_result.p50_latency_us)))
+            row.append(int(round(result.single_node_result.p60_latency_us)))
+            row.append(int(round(result.single_node_result.p70_latency_us)))
+            row.append(int(round(result.single_node_result.p75_latency_us)))
+            row.append(int(round(result.single_node_result.p80_latency_us)))
+            row.append(int(round(result.single_node_result.p90_latency_us)))
+            row.append(int(round(result.single_node_result.p95_latency_us)))
+            row.append(int(round(result.single_node_result.p99_latency_us)))
+            row.append(int(round(result.single_node_result.p99_9_latency_us)))
+            row.append(int(round(result.single_node_result.p99_99_latency_us)))
+            row.append(int(round(result.single_node_result.p99_999_latency_us)))
         rows.append(row)
 
     print(tabulate(rows, headers=headers))
@@ -903,6 +1051,22 @@ with tempfile.TemporaryDirectory() as tmpdirname:
                     "fraction_of_execution_in_inner_block_executor": single_node_result.fraction_of_execution_in_inner_block_executor,
                     "fraction_in_ledger_update": single_node_result.fraction_in_ledger_update,
                     "fraction_in_commit": single_node_result.fraction_in_commit,
+                    #sj: Add tail latency percentiles (in microseconds)
+                    "p10_latency_us": single_node_result.p10_latency_us,
+                    "p20_latency_us": single_node_result.p20_latency_us,
+                    "p30_latency_us": single_node_result.p30_latency_us,
+                    "p40_latency_us": single_node_result.p40_latency_us,
+                    "p50_latency_us": single_node_result.p50_latency_us,
+                    "p60_latency_us": single_node_result.p60_latency_us,
+                    "p70_latency_us": single_node_result.p70_latency_us,
+                    "p75_latency_us": single_node_result.p75_latency_us,
+                    "p80_latency_us": single_node_result.p80_latency_us,
+                    "p90_latency_us": single_node_result.p90_latency_us,
+                    "p95_latency_us": single_node_result.p95_latency_us,
+                    "p99_latency_us": single_node_result.p99_latency_us,
+                    "p99_9_latency_us": single_node_result.p99_9_latency_us,
+                    "p99_99_latency_us": single_node_result.p99_99_latency_us,
+                    "p99_999_latency_us": single_node_result.p99_999_latency_us,
                     "code_perf_version": CODE_PERF_VERSION,
                     "flow": str(SELECTED_FLOW),
                     "test_index": test_index,

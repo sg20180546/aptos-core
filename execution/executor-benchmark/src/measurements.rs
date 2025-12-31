@@ -523,10 +523,13 @@ impl OverallMeasurement {
         let mut all_latencies = get_all_latencies();
         if !all_latencies.is_empty() {
             let percentiles = calculate_percentiles_us(&mut all_latencies);
-            println!("{} === Transaction Tail Latencies (microseconds) ===\n", self.prefix);
+            info!("{} === Transaction Tail Latencies (microseconds) ===\n", self.prefix);
             for (label, value_us) in percentiles.iter() {
-                println!("{} {}: {} us\n", self.prefix, label, value_us);
+                info!("{} {}: {} us\n", self.prefix, label, value_us);
             }
+        }else{
+            println!("sj@@@@@@@ NO LATNECY???\n");
+
         }
     }
 

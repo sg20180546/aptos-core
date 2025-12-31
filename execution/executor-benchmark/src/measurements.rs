@@ -21,16 +21,9 @@ use std::{
 };
 use once_cell::sync::Lazy;
 
-//sj: Thread-local collector for transaction execution latencies (in microseconds)
-//    Using thread-local storage avoids mutex contention during hot path
-thread_local! {
-    static THREAD_LATENCIES: RefCell<Vec<u64>> = RefCell::new(Vec::new());
-}
-
-//sj: Global aggregator that collects from all threads at print time
-static AGGREGATED_LATENCIES: Lazy<Mutex<Vec<Vec<u64>>>> = Lazy::new(|| Mutex::new(Vec::new()));
-
 //sj: Calculate percentiles from collected latency samples (in microseconds)
+//    NOTE: Latency collection (THREAD_LATENCIES, AGGREGATED_LATENCIES) is now
+//    delegated to aptos_block_executor::counters for a single source of truth
 fn calculate_percentiles_us(samples: &mut Vec<u64>) -> BTreeMap<String, u64> {
     if samples.is_empty() {
         return BTreeMap::new();
@@ -65,56 +58,6 @@ fn calculate_percentiles_us(samples: &mut Vec<u64>) -> BTreeMap<String, u64> {
     }
 
     result
-}
-
-//sj: Record a transaction execution latency sample (in microseconds)
-//    No mutex needed - uses thread-local storage
-pub fn record_task_latency_us(duration_us: u64) {
-        println!("record_task_latency_us measurement.rs\n");
-
-    THREAD_LATENCIES.with(|latencies| {
-        latencies.borrow_mut().push(duration_us);
-    });
-}
-
-//sj: Flush thread-local latencies to global aggregator for final processing
-//    Called at the end of parallel execution phase
-pub fn flush_thread_latencies() {
-    THREAD_LATENCIES.with(|latencies| {
-        let thread_samples = latencies.borrow_mut().drain(..).collect::<Vec<_>>();
-        if !thread_samples.is_empty() {
-            if let Ok(mut aggregated) = AGGREGATED_LATENCIES.lock() {
-                aggregated.push(thread_samples);
-            }
-        }
-    });
-}
-
-//sj: Reset latency collector for new measurement period
-pub fn reset_latency_collector() {
-    THREAD_LATENCIES.with(|latencies| {
-        latencies.borrow_mut().clear();
-    });
-    if let Ok(mut aggregated) = AGGREGATED_LATENCIES.lock() {
-        aggregated.clear();
-    }
-}
-
-//sj: Get all collected latencies from all threads (combines at print time)
-pub fn get_all_latencies() -> Vec<u64> {
-    // First flush current thread's data
-    flush_thread_latencies();
-
-    // Combine all thread-local vectors into one
-    if let Ok(mut aggregated) = AGGREGATED_LATENCIES.lock() {
-        let mut all_samples = Vec::new();
-        for thread_samples in aggregated.drain(..) {
-            all_samples.extend(thread_samples);
-        }
-        all_samples
-    } else {
-        Vec::new()
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -309,7 +252,7 @@ pub(crate) struct OverallMeasuring {
 impl OverallMeasuring {
     pub fn start() -> Self {
         //sj: Reset latency collector at the start of each measurement period
-        reset_latency_collector();
+        block_executor_counters::reset_latency_collector();
 
         Self {
             start_time: Instant::now(),
@@ -522,7 +465,7 @@ impl OverallMeasurement {
 
         //sj: Output tail latency percentiles (in microseconds)
         //    get_all_latencies() combines all thread-local data at print time
-        let mut all_latencies = get_all_latencies();
+        let mut all_latencies = block_executor_counters::get_all_latencies();
         if !all_latencies.is_empty() {
             let percentiles = calculate_percentiles_us(&mut all_latencies);
             info!("{} === Transaction Tail Latencies (microseconds) ===\n", self.prefix);

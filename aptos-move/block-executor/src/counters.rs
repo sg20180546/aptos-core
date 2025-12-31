@@ -487,6 +487,7 @@ thread_local! {
 static AGGREGATED_LATENCIES: Lazy<Mutex<Vec<Vec<u64>>>> = Lazy::new(|| Mutex::new(Vec::new()));
 
 //sj: Calculate percentile values from sorted samples (in microseconds)
+#[allow(dead_code)]
 fn calculate_percentiles_us(samples: &mut Vec<u64>) -> BTreeMap<String, u64> {
     if samples.is_empty() {
         return BTreeMap::new();

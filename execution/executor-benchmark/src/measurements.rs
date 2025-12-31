@@ -4,7 +4,6 @@
 use crate::metrics::TIMER;
 use aptos_block_executor::counters::{
     self as block_executor_counters, GasType, BLOCK_EXECUTOR_INNER_EXECUTE_BLOCK,
-    TASK_EXECUTE_SECONDS, //sj: Added for tail latency tracking
 };
 use aptos_executor::metrics::{
     COMMIT_BLOCKS, GET_BLOCK_EXECUTION_OUTPUT_BY_EXECUTING, OTHER_TIMERS,

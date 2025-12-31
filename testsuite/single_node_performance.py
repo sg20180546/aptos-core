@@ -469,6 +469,24 @@ def get_only(values):
 def extract_run_results(
     output: str, prefix: str, create_db: bool = False
 ) -> RunResults:
+    #sj: Initialize tail latency percentiles (in microseconds) at function scope
+    # so they're always defined before return statement
+    p10_latency_us = 0.0
+    p20_latency_us = 0.0
+    p30_latency_us = 0.0
+    p40_latency_us = 0.0
+    p50_latency_us = 0.0
+    p60_latency_us = 0.0
+    p70_latency_us = 0.0
+    p75_latency_us = 0.0
+    p80_latency_us = 0.0
+    p90_latency_us = 0.0
+    p95_latency_us = 0.0
+    p99_latency_us = 0.0
+    p99_9_latency_us = 0.0
+    p99_99_latency_us = 0.0
+    p99_999_latency_us = 0.0
+
     if create_db:
         tps = float(
             get_only(
@@ -549,86 +567,70 @@ def extract_run_results(
             ]
         )
 
-        #sj: Extract tail latency percentiles (in microseconds)
-        p10_latency_us = 0.0
-        p20_latency_us = 0.0
-        p30_latency_us = 0.0
-        p40_latency_us = 0.0
-        p50_latency_us = 0.0
-        p60_latency_us = 0.0
-        p70_latency_us = 0.0
-        p75_latency_us = 0.0
-        p80_latency_us = 0.0
-        p90_latency_us = 0.0
-        p95_latency_us = 0.0
-        p99_latency_us = 0.0
-        p99_9_latency_us = 0.0
-        p99_99_latency_us = 0.0
-        p99_999_latency_us = 0.0
+    #sj: Extract tail latency percentiles (in microseconds) at function scope
+    # Try to extract percentiles from output
+    try:
+        p10_match = re.findall(prefix + r" p10: (\d+\.?\d*) us", output)
+        if p10_match:
+            p10_latency_us = float(p10_match[-1])
 
-        # Try to extract percentiles from output
-        try:
-            p10_match = re.findall(prefix + r" p10: (\d+\.?\d*) us", output)
-            if p10_match:
-                p10_latency_us = float(p10_match[-1])
+        p20_match = re.findall(prefix + r" p20: (\d+\.?\d*) us", output)
+        if p20_match:
+            p20_latency_us = float(p20_match[-1])
 
-            p20_match = re.findall(prefix + r" p20: (\d+\.?\d*) us", output)
-            if p20_match:
-                p20_latency_us = float(p20_match[-1])
+        p30_match = re.findall(prefix + r" p30: (\d+\.?\d*) us", output)
+        if p30_match:
+            p30_latency_us = float(p30_match[-1])
 
-            p30_match = re.findall(prefix + r" p30: (\d+\.?\d*) us", output)
-            if p30_match:
-                p30_latency_us = float(p30_match[-1])
+        p40_match = re.findall(prefix + r" p40: (\d+\.?\d*) us", output)
+        if p40_match:
+            p40_latency_us = float(p40_match[-1])
 
-            p40_match = re.findall(prefix + r" p40: (\d+\.?\d*) us", output)
-            if p40_match:
-                p40_latency_us = float(p40_match[-1])
+        p50_match = re.findall(prefix + r" p50: (\d+\.?\d*) us", output)
+        if p50_match:
+            p50_latency_us = float(p50_match[-1])
 
-            p50_match = re.findall(prefix + r" p50: (\d+\.?\d*) us", output)
-            if p50_match:
-                p50_latency_us = float(p50_match[-1])
+        p60_match = re.findall(prefix + r" p60: (\d+\.?\d*) us", output)
+        if p60_match:
+            p60_latency_us = float(p60_match[-1])
 
-            p60_match = re.findall(prefix + r" p60: (\d+\.?\d*) us", output)
-            if p60_match:
-                p60_latency_us = float(p60_match[-1])
+        p70_match = re.findall(prefix + r" p70: (\d+\.?\d*) us", output)
+        if p70_match:
+            p70_latency_us = float(p70_match[-1])
 
-            p70_match = re.findall(prefix + r" p70: (\d+\.?\d*) us", output)
-            if p70_match:
-                p70_latency_us = float(p70_match[-1])
+        p75_match = re.findall(prefix + r" p75: (\d+\.?\d*) us", output)
+        if p75_match:
+            p75_latency_us = float(p75_match[-1])
 
-            p75_match = re.findall(prefix + r" p75: (\d+\.?\d*) us", output)
-            if p75_match:
-                p75_latency_us = float(p75_match[-1])
+        p80_match = re.findall(prefix + r" p80: (\d+\.?\d*) us", output)
+        if p80_match:
+            p80_latency_us = float(p80_match[-1])
 
-            p80_match = re.findall(prefix + r" p80: (\d+\.?\d*) us", output)
-            if p80_match:
-                p80_latency_us = float(p80_match[-1])
+        p90_match = re.findall(prefix + r" p90: (\d+\.?\d*) us", output)
+        if p90_match:
+            p90_latency_us = float(p90_match[-1])
 
-            p90_match = re.findall(prefix + r" p90: (\d+\.?\d*) us", output)
-            if p90_match:
-                p90_latency_us = float(p90_match[-1])
+        p95_match = re.findall(prefix + r" p95: (\d+\.?\d*) us", output)
+        if p95_match:
+            p95_latency_us = float(p95_match[-1])
 
-            p95_match = re.findall(prefix + r" p95: (\d+\.?\d*) us", output)
-            if p95_match:
-                p95_latency_us = float(p95_match[-1])
+        p99_match = re.findall(prefix + r" p99: (\d+\.?\d*) us", output)
+        if p99_match:
+            p99_latency_us = float(p99_match[-1])
 
-            p99_match = re.findall(prefix + r" p99: (\d+\.?\d*) us", output)
-            if p99_match:
-                p99_latency_us = float(p99_match[-1])
+        p99_9_match = re.findall(prefix + r" p99\.9: (\d+\.?\d*) us", output)
+        if p99_9_match:
+            p99_9_latency_us = float(p99_9_match[-1])
 
-            p99_9_match = re.findall(prefix + r" p99\.9: (\d+\.?\d*) us", output)
-            if p99_9_match:
-                p99_9_latency_us = float(p99_9_match[-1])
+        p99_99_match = re.findall(prefix + r" p99\.99: (\d+\.?\d*) us", output)
+        if p99_99_match:
+            p99_99_latency_us = float(p99_99_match[-1])
 
-            p99_99_match = re.findall(prefix + r" p99\.99: (\d+\.?\d*) us", output)
-            if p99_99_match:
-                p99_99_latency_us = float(p99_99_match[-1])
-
-            p99_999_match = re.findall(prefix + r" p99\.999: (\d+\.?\d*) us", output)
-            if p99_999_match:
-                p99_999_latency_us = float(p99_999_match[-1])
-        except Exception as e:
-            print(f"Warning: Failed to parse tail latencies: {e}")
+        p99_999_match = re.findall(prefix + r" p99\.999: (\d+\.?\d*) us", output)
+        if p99_999_match:
+            p99_999_latency_us = float(p99_999_match[-1])
+    except Exception as e:
+        print(f"Warning: Failed to parse tail latencies: {e}")
 
     return RunResults(
         tps=tps,

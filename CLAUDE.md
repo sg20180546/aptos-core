@@ -18,8 +18,7 @@ do not use mutex(lock) as possible, please record tail lantencies of each thread
 ## Benchmark Commands(Running Experiments)
 i am running on this aptos-core with script:
 ./testsuite/performance_benchmark_sj.sh --sj
-i am running this script on remote server, not here.
-
+i am running this script on remote server, not here. do not execute python or cargo(rust) compile in here. i will test it on server, and give any error message.
 
 
 

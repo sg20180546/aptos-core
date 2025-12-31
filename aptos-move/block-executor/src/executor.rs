@@ -76,6 +76,7 @@ use std::{
         atomic::{AtomicBool, AtomicU32, Ordering},
         Arc,
     },
+    time::Instant, //sj: For microsecond latency measurement
 };
 use triomphe::Arc as TriompheArc;
 
@@ -408,6 +409,7 @@ where
         block_gas_limit_type: &BlockGasLimitType,
     ) -> Result<(), PanicError> {
         let _timer = TASK_EXECUTE_SECONDS.start_timer();
+        let start_time = Instant::now(); //sj: For microsecond latency measurement
 
         let mut abort_manager = AbortManager::new(idx_to_execute, incarnation, scheduler);
         let sync_view = LatestView::new(
@@ -437,6 +439,9 @@ where
             // Ignoring module validation requirements since speculative failure
             // anyway requires re-execution.
             let _ = scheduler.finish_execution(abort_manager)?;
+            //sj: Record latency in microseconds
+            let elapsed_us = start_time.elapsed().as_micros() as u64;
+            counters::record_task_latency_us(elapsed_us);
             return Ok(());
         }
 
@@ -526,6 +531,9 @@ where
                 true,
             )?;
         }
+        //sj: Record latency in microseconds
+        let elapsed_us = start_time.elapsed().as_micros() as u64;
+        counters::record_task_latency_us(elapsed_us);
         Ok(())
     }
 
@@ -552,6 +560,7 @@ where
         block_gas_limit_type: &BlockGasLimitType,
     ) -> Result<SchedulerTask, PanicError> {
         let _timer = TASK_EXECUTE_SECONDS.start_timer();
+        let start_time = Instant::now(); //sj: For microsecond latency measurement
 
         // VM execution.
         let sync_view = LatestView::new(
@@ -705,6 +714,9 @@ where
             block_gas_limit_type,
             txn.user_txn_bytes_len() as u64,
         )?;
+        //sj: Record latency in microseconds
+        let elapsed_us = start_time.elapsed().as_micros() as u64;
+        counters::record_task_latency_us(elapsed_us);
         if let Some(scheduler) = maybe_scheduler {
             scheduler.finish_execution(idx_to_execute, incarnation, needs_suffix_validation)
         } else {

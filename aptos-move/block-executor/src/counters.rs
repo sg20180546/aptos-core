@@ -11,6 +11,11 @@ use aptos_mvhashmap::BlockStateStats;
 use aptos_types::fee_statement::FeeStatement;
 use move_vm_runtime::execution_tracing::Trace;
 use once_cell::sync::Lazy;
+use std::{
+    cell::RefCell,
+    collections::BTreeMap,
+    sync::Mutex,
+}; //sj: Added for thread-local latency collection (microseconds, lock-free)
 
 pub struct GasType;
 
@@ -470,4 +475,100 @@ pub(crate) fn update_txn_trace_counters(trace: &Trace) {
         trace.num_recorded_branch_outcomes() as i64,
     );
     TRACE_COUNTERS.set_with(&["num_calls"], trace.num_recorded_calls() as i64);
+}
+
+//sj: Thread-local collector for transaction execution latencies (in microseconds)
+//    Using thread-local storage avoids mutex contention during hot path
+thread_local! {
+    static THREAD_LATENCIES: RefCell<Vec<u64>> = RefCell::new(Vec::new());
+}
+
+//sj: Global aggregator that collects from all threads at print time
+static AGGREGATED_LATENCIES: Lazy<Mutex<Vec<Vec<u64>>>> = Lazy::new(|| Mutex::new(Vec::new()));
+
+//sj: Calculate percentile values from sorted samples (in microseconds)
+fn calculate_percentiles_us(samples: &mut Vec<u64>) -> BTreeMap<String, u64> {
+    if samples.is_empty() {
+        return BTreeMap::new();
+    }
+
+    samples.sort_unstable();
+    let len = samples.len();
+
+    let percentiles = vec![
+        ("p10", 0.10),
+        ("p20", 0.20),
+        ("p30", 0.30),
+        ("p40", 0.40),
+        ("p50", 0.50),
+        ("p60", 0.60),
+        ("p70", 0.70),
+        ("p75", 0.75),
+        ("p80", 0.80),
+        ("p90", 0.90),
+        ("p95", 0.95),
+        ("p99", 0.99),
+        ("p99.9", 0.999),
+        ("p99.99", 0.9999),
+        ("p99.999", 0.99999),
+    ];
+
+    let mut result = BTreeMap::new();
+    for (label, ratio) in percentiles {
+        let index = ((len as f64) * ratio).ceil() as usize - 1;
+        let index = index.min(len - 1);
+        result.insert(label.to_string(), samples[index]);
+    }
+
+    result
+}
+
+//sj: Record a transaction execution latency sample (in microseconds)
+//    No mutex needed - uses thread-local storage on hot path
+pub fn record_task_latency_us(duration_us: u64) {
+    THREAD_LATENCIES.with(|latencies| {
+        latencies.borrow_mut().push(duration_us);
+    });
+}
+
+//sj: Flush all thread-local latencies to global aggregator
+//    Called when consolidating results from all threads
+pub fn flush_thread_latencies() {
+    THREAD_LATENCIES.with(|latencies| {
+        let mut local_data = latencies.borrow_mut();
+        if !local_data.is_empty() {
+            if let Ok(mut aggregated) = AGGREGATED_LATENCIES.lock() {
+                aggregated.push(local_data.drain(..).collect());
+            }
+        }
+    });
+}
+
+//sj: Reset latency collector for new measurement period
+pub fn reset_latency_collector() {
+    THREAD_LATENCIES.with(|latencies| {
+        latencies.borrow_mut().clear();
+    });
+
+    if let Ok(mut aggregated) = AGGREGATED_LATENCIES.lock() {
+        aggregated.clear();
+    }
+}
+
+//sj: Get all aggregated latencies in microseconds
+//    This is where we combine all thread-local data (only locks here)
+pub fn get_all_latencies() -> Vec<u64> {
+    // First flush current thread's data
+    flush_thread_latencies();
+
+    // Then collect from global aggregator
+    if let Ok(aggregated) = AGGREGATED_LATENCIES.lock() {
+        let mut combined = Vec::new();
+        for thread_data in aggregated.iter() {
+            combined.extend(thread_data);
+        }
+        combined
+    } else {
+        Vec::new()
+    }
 }

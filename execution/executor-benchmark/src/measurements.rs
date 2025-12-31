@@ -4,6 +4,7 @@
 use crate::metrics::TIMER;
 use aptos_block_executor::counters::{
     self as block_executor_counters, GasType, BLOCK_EXECUTOR_INNER_EXECUTE_BLOCK,
+    TASK_EXECUTE_SECONDS, //sj: Added for tail latency tracking
 };
 use aptos_executor::metrics::{
     COMMIT_BLOCKS, GET_BLOCK_EXECUTION_OUTPUT_BY_EXECUTING, OTHER_TIMERS,
@@ -13,10 +14,107 @@ use aptos_logger::info;
 use aptos_metrics_core::Histogram;
 use move_core_types::language_storage::StructTag;
 use std::{
+    cell::RefCell,
     collections::{BTreeMap, HashMap},
     fmt::Write,
+    sync::Mutex,
     time::Instant,
 };
+use once_cell::sync::Lazy;
+
+//sj: Thread-local collector for transaction execution latencies (in microseconds)
+//    Using thread-local storage avoids mutex contention during hot path
+thread_local! {
+    static THREAD_LATENCIES: RefCell<Vec<u64>> = RefCell::new(Vec::new());
+}
+
+//sj: Global aggregator that collects from all threads at print time
+static AGGREGATED_LATENCIES: Lazy<Mutex<Vec<Vec<u64>>>> = Lazy::new(|| Mutex::new(Vec::new()));
+
+//sj: Calculate percentiles from collected latency samples (in microseconds)
+fn calculate_percentiles_us(samples: &mut Vec<u64>) -> BTreeMap<String, u64> {
+    if samples.is_empty() {
+        return BTreeMap::new();
+    }
+
+    samples.sort_unstable();
+    let len = samples.len();
+
+    let percentiles = vec![
+        ("p10", 0.10),
+        ("p20", 0.20),
+        ("p30", 0.30),
+        ("p40", 0.40),
+        ("p50", 0.50),
+        ("p60", 0.60),
+        ("p70", 0.70),
+        ("p75", 0.75),
+        ("p80", 0.80),
+        ("p90", 0.90),
+        ("p95", 0.95),
+        ("p99", 0.99),
+        ("p99.9", 0.999),
+        ("p99.99", 0.9999),
+        ("p99.999", 0.99999),
+    ];
+
+    let mut result = BTreeMap::new();
+    for (label, ratio) in percentiles {
+        let index = ((len as f64) * ratio).ceil() as usize - 1;
+        let index = index.min(len - 1);
+        result.insert(label.to_string(), samples[index]);
+    }
+
+    result
+}
+
+//sj: Record a transaction execution latency sample (in microseconds)
+//    No mutex needed - uses thread-local storage
+pub fn record_task_latency_us(duration_us: u64) {
+    THREAD_LATENCIES.with(|latencies| {
+        latencies.borrow_mut().push(duration_us);
+    });
+}
+
+//sj: Flush thread-local latencies to global aggregator for final processing
+//    Called at the end of parallel execution phase
+pub fn flush_thread_latencies() {
+    THREAD_LATENCIES.with(|latencies| {
+        let thread_samples = latencies.borrow_mut().drain(..).collect::<Vec<_>>();
+        if !thread_samples.is_empty() {
+            if let Ok(mut aggregated) = AGGREGATED_LATENCIES.lock() {
+                aggregated.push(thread_samples);
+            }
+        }
+    });
+}
+
+//sj: Reset latency collector for new measurement period
+pub fn reset_latency_collector() {
+    THREAD_LATENCIES.with(|latencies| {
+        latencies.borrow_mut().clear();
+    });
+    if let Ok(mut aggregated) = AGGREGATED_LATENCIES.lock() {
+        aggregated.clear();
+    }
+}
+
+//sj: Get all collected latencies from all threads (combines at print time)
+pub fn get_all_latencies() -> Vec<u64> {
+    // First flush current thread's data
+    flush_thread_latencies();
+
+    // Combine all thread-local vectors into one
+    if let Ok(mut aggregated) = AGGREGATED_LATENCIES.lock() {
+        let mut all_samples = Vec::new();
+        for thread_samples in aggregated.drain(..) {
+            all_samples.extend(thread_samples);
+        }
+        all_samples
+    } else {
+        Vec::new()
+    }
+}
 
 #[derive(Debug, Clone)]
 struct GasMeasurement {
@@ -209,6 +307,9 @@ pub(crate) struct OverallMeasuring {
 
 impl OverallMeasuring {
     pub fn start() -> Self {
+        //sj: Reset latency collector at the start of each measurement period
+        reset_latency_collector();
+
         Self {
             start_time: Instant::now(),
             start_execution: ExecutionTimeMeasurement::now(),
@@ -417,6 +518,17 @@ impl OverallMeasurement {
             self.delta_execution.commit_total_time / self.elapsed,
             num_txns / self.delta_execution.commit_total_time
         );
+
+        //sj: Output tail latency percentiles (in microseconds)
+        //    get_all_latencies() combines all thread-local data at print time
+        let mut all_latencies = get_all_latencies();
+        if !all_latencies.is_empty() {
+            let percentiles = calculate_percentiles_us(&mut all_latencies);
+            info!("{} === Transaction Tail Latencies (microseconds) ===", self.prefix);
+            for (label, value_us) in percentiles.iter() {
+                info!("{} {}: {} us", self.prefix, label, value_us);
+            }
+        }
     }
 
     pub fn format_end_table(stages: &[Self], overall: &Self) -> String {

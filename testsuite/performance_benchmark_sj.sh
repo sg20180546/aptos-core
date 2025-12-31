@@ -26,7 +26,7 @@ echo "Using NUMBER_OF_EXECUTION_THREADS = $THREADS (found $VIRTUAL_CORES virtual
 
 NBPT=300
 HD=1
-EP=0
+EP=1
 
 
 

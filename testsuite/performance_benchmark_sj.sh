@@ -24,13 +24,22 @@ THREADS="${NUMBER_OF_EXECUTION_THREADS:-$DEFAULT_THREADS}"
 
 echo "Using NUMBER_OF_EXECUTION_THREADS = $THREADS (found $VIRTUAL_CORES virtual cores)"
 
+NBPT=300
+HD=1
+EP=1
+
+
+
 # Check for the flag
 if [ "$1" == "--short" ]; then
     echo "Running short benchmark..."
-    run_benchmark "MAINNET" 50 1 1 $THREADS
+    run_benchmark "MAINNET" 50 1 0 $THREADS
 elif [ "$1" == "--long" ]; then
     echo "Running long benchmark..."
     run_benchmark "MAINNET_LARGE_DB" 300 1 1 $THREADS
+elif [ "$1" == "--sj" ]; then
+    echo "Running sj benchmark..."
+    run_benchmark "MAINNET_LARGE_DB" $NBPT $HD $EP $THREADS
 else
     echo "Usage: $0 [--short | --long]"
     exit 1

@@ -39,7 +39,7 @@ elif [ "$1" == "--long" ]; then
     run_benchmark "MAINNET_LARGE_DB" 300 1 1 $THREADS
 elif [ "$1" == "--sj" ]; then
     echo "Running sj benchmark..."
-    run_benchmark "MAINNET_LARGE_DB" $NBPT $HD $EP $THREADS
+    run_benchmark "MAINNET" $NBPT $HD $EP $THREADS
 else
     echo "Usage: $0 [--short | --long]"
     exit 1

@@ -527,6 +527,7 @@ fn calculate_percentiles_us(samples: &mut Vec<u64>) -> BTreeMap<String, u64> {
 //sj: Record a transaction execution latency sample (in microseconds)
 //    No mutex needed - uses thread-local storage on hot path
 pub fn record_task_latency_us(duration_us: u64) {
+    println!("record_task_latency_us counter.rs\n")
     THREAD_LATENCIES.with(|latencies| {
         latencies.borrow_mut().push(duration_us);
     });

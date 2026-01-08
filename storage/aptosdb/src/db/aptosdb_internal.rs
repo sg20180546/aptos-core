@@ -127,6 +127,7 @@ impl AptosDB {
             rocksdb_configs.shared_block_cache_size,
             /* estimated_entry_charge = */ 0,
         );
+        env.set_wal_dir("/home/femu/tenant0/p7");
 
         let (ledger_db, state_merkle_db, state_kv_db) = Self::open_dbs(
             db_paths,

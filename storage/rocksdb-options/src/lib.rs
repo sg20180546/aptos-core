@@ -26,7 +26,8 @@ pub fn gen_rocksdb_options(config: &RocksdbConfig, env: Option<&Env>, readonly: 
     }
     db_opts.set_max_open_files(config.max_open_files);
     db_opts.set_max_total_wal_size(config.max_total_wal_size);
-    db_opts.set_wal_dir("/home/femu/tenant0/p7");
+    // db_opts.set_wal_dir("{");
+    // db_options.get_dir_paths();
     if let Some(level) = config.stats_level {
         db_opts.enable_statistics();
         db_opts.set_statistics_level(convert_stats_level(level));

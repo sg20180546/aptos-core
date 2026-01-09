@@ -440,8 +440,8 @@ where
             // anyway requires re-execution.
             let _ = scheduler.finish_execution(abort_manager)?;
             //sj: Record latency in microseconds
-            let elapsed_us = start_time.elapsed().as_micros() as u64;
-            counters::record_task_latency_us(elapsed_us);
+            // let elapsed_us = start_time.elapsed().as_micros() as u64;
+            // counters::record_task_latency_us(elapsed_us);
             return Ok(());
         }
 

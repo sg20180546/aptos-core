@@ -295,15 +295,17 @@ pub fn run_benchmark<V>(
 where
     V: VMBlockExecutor + 'static,
 {
-    create_checkpoint(
-        source_dir.as_ref(),
-        checkpoint_dir.as_ref(),
-        storage_test_config.enable_storage_sharding,
-        storage_test_config.enable_indexer_grpc,
-    );
+    // sj: DISABLED checkpoint creation - memory fault occurs at end of benchmark execution
+    // (uncomment below to re-enable)
+    // create_checkpoint(
+    //     source_dir.as_ref(),
+    //     checkpoint_dir.as_ref(),
+    //     storage_test_config.enable_storage_sharding,
+    //     storage_test_config.enable_indexer_grpc,
+    // );
     let (mut config, genesis_key) =
         aptos_genesis::test_utils::test_config_with_custom_features(init_features);
-    config.storage.dir = checkpoint_dir.as_ref().to_path_buf();
+    config.storage.dir = source_dir.as_ref().to_path_buf();
     storage_test_config.init_storage_config(&mut config);
     let db = init_db(&config);
     let root_account = TransactionGenerator::read_root_account(genesis_key, &db);
@@ -557,12 +559,14 @@ pub fn add_accounts<V>(
     V: VMBlockExecutor + 'static,
 {
     assert!(source_dir.as_ref() != checkpoint_dir.as_ref());
-    create_checkpoint(
-        source_dir.as_ref(),
-        checkpoint_dir.as_ref(),
-        storage_test_config.enable_storage_sharding,
-        storage_test_config.enable_indexer_grpc,
-    );
+    // sj: DISABLED checkpoint creation - memory fault occurs at end of benchmark execution
+    // (uncomment below to re-enable)
+    // create_checkpoint(
+    //     source_dir.as_ref(),
+    //     checkpoint_dir.as_ref(),
+    //     storage_test_config.enable_storage_sharding,
+    //     storage_test_config.enable_indexer_grpc,
+    // );
     add_accounts_impl::<V>(
         num_new_accounts,
         init_account_balance,

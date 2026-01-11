@@ -467,11 +467,9 @@ where
     };
 
     // sj: Print block generation statistics
-    let end_version = db.reader.expect_synced_version();
-    let total_blocks_created = end_version - start_version;
     println!(
-        "\nBlock generation during benchmark: version {} to {} = {} blocks",
-        start_version, end_version - 1, total_blocks_created
+        "\nBlock generation during benchmark: {} blocks",
+        num_blocks_created
     );
 
     let overall_results =
@@ -479,7 +477,7 @@ where
 
     // Print blocks per second
     if overall_results.get_elapsed() > 0.0 {
-        println!("Blocks per second: {:.2}", total_blocks_created as f64 / overall_results.get_elapsed());
+        println!("Blocks per second: {:.2}", num_blocks_created as f64 / overall_results.get_elapsed());
     }
 
     overall_results.print_end();

@@ -433,6 +433,9 @@ class RunResults:
     p99_9_latency_us: float = 0
     p99_99_latency_us: float = 0
     p99_999_latency_us: float = 0
+    # sj: Block generation metrics
+    num_blocks: int = 0
+    blocks_per_second: float = 0.0
 
 
 @dataclass
@@ -486,6 +489,10 @@ def extract_run_results(
     p99_9_latency_us = 0.0
     p99_99_latency_us = 0.0
     p99_999_latency_us = 0.0
+
+    # sj: Initialize block generation metrics
+    num_blocks = 0
+    blocks_per_second = 0.0
 
     if create_db:
         tps = float(
@@ -629,6 +636,15 @@ def extract_run_results(
         p99_999_match = re.findall(prefix + r" p99\.999: (\d+\.?\d*) us", output)
         if p99_999_match:
             p99_999_latency_us = float(p99_999_match[-1])
+
+        # sj: Extract block generation metrics
+        num_blocks_match = re.findall(prefix + r" num_blocks: (\d+)", output)
+        if num_blocks_match:
+            num_blocks = int(num_blocks_match[-1])
+
+        blocks_per_second_match = re.findall(prefix + r" blocks/s: (\d+\.?\d*)", output)
+        if blocks_per_second_match:
+            blocks_per_second = float(blocks_per_second_match[-1])
     except Exception as e:
         print(f"Warning: Failed to parse tail latencies: {e}")
 
@@ -662,6 +678,8 @@ def extract_run_results(
         p99_9_latency_us=p99_9_latency_us,
         p99_99_latency_us=p99_99_latency_us,
         p99_999_latency_us=p99_999_latency_us,
+        num_blocks=num_blocks,  # sj: Number of blocks created
+        blocks_per_second=blocks_per_second,  # sj: Block generation rate
     )
 
 
@@ -1069,6 +1087,9 @@ with tempfile.TemporaryDirectory() as tmpdirname:
                     "p99_9_latency_us": single_node_result.p99_9_latency_us,
                     "p99_99_latency_us": single_node_result.p99_99_latency_us,
                     "p99_999_latency_us": single_node_result.p99_999_latency_us,
+                    # sj: Block generation metrics
+                    "num_blocks": single_node_result.num_blocks,
+                    "blocks_per_second": single_node_result.blocks_per_second,
                     "code_perf_version": CODE_PERF_VERSION,
                     "flow": str(SELECTED_FLOW),
                     "test_index": test_index,

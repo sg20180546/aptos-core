@@ -238,6 +238,7 @@ where
                                 format!("Staged execution: stage {}:", stage_index),
                                 format!("{:?}", stage_txn_occurences),
                                 stage_executed,
+                                0,  // sj: num_blocks not applicable for staged execution
                             );
 
                             stage_measurement.print_end();
@@ -256,6 +257,7 @@ where
                         format!("Staged execution: stage {}:", stage_index),
                         format!("{:?}", stage_txn_occurences),
                         stage_executed,
+                        0,  // sj: num_blocks not applicable for staged execution
                     );
                     stage_measurement.print_end();
                     staged_result_clone.lock().push(stage_measurement);

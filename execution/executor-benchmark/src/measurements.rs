@@ -261,7 +261,7 @@ impl OverallMeasuring {
         }
     }
 
-    pub fn elapsed(self, prefix: String, metadata: String, num_txns: u64) -> OverallMeasurement {
+    pub fn elapsed(self, prefix: String, metadata: String, num_txns: u64, num_blocks: u64) -> OverallMeasurement {
         let elapsed = self.start_time.elapsed().as_secs_f64();
         let delta_execution = self.start_execution.elapsed_delta();
         let delta_gas = self.start_gas.elapsed_delta();
@@ -271,6 +271,7 @@ impl OverallMeasuring {
             metadata,
             elapsed,
             num_txns,
+            num_blocks,
             delta_execution,
             delta_gas,
         }
@@ -283,6 +284,7 @@ pub struct OverallMeasurement {
     metadata: String,
     elapsed: f64,
     num_txns: u64,
+    num_blocks: u64,  // sj: Number of blocks created during benchmark
     delta_execution: ExecutionTimeMeasurement,
     delta_gas: GasMeasurement,
 }
@@ -290,6 +292,14 @@ pub struct OverallMeasurement {
 impl OverallMeasurement {
     pub fn get_elapsed(&self) -> f64 {
         self.elapsed
+    }
+
+    pub fn get_num_blocks(&self) -> u64 {
+        self.num_blocks
+    }
+
+    pub fn get_blocks_per_second(&self) -> f64 {
+        self.num_blocks as f64 / self.elapsed
     }
 
     pub fn get_tps(&self) -> f64 {
@@ -545,6 +555,8 @@ impl OverallMeasurement {
         serde_json::json!({
             "stage": self.prefix.replace("Staged execution: ", ""),
             "metadata": self.metadata,
+            "num_blocks": self.get_num_blocks(),  // sj: Number of blocks created
+            "blocks/s": format!("{:.2}", self.get_blocks_per_second()),  // sj: Block generation rate
             "txns/s": format!("{:.2}", self.get_tps()),
             "gas/s": format!("{:.2}", self.get_gps()),
             "eff_gas/s": format!("{:.2}", self.get_effective_gps()),

@@ -466,19 +466,9 @@ where
         num_pipeline_txns.unwrap_or_default()
     };
 
-    // sj: Print block generation statistics
-    println!(
-        "\nBlock generation during benchmark: {} blocks",
-        num_blocks_created
-    );
-
+    // sj: Create overall measurement with block count
     let overall_results =
-        overall_measuring.elapsed("Overall".to_string(), "".to_string(), num_txns);
-
-    // Print blocks per second
-    if overall_results.get_elapsed() > 0.0 {
-        println!("Blocks per second: {:.2}", num_blocks_created as f64 / overall_results.get_elapsed());
-    }
+        overall_measuring.elapsed("Overall".to_string(), "".to_string(), num_txns, num_blocks_created as u64);
 
     overall_results.print_end();
 

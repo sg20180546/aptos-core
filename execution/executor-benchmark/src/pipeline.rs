@@ -34,6 +34,7 @@ use std::{
     },
     thread::JoinHandle,
     time::{Duration, Instant},
+    env,
 };
 
 #[derive(Debug, Derivative)]
@@ -82,9 +83,15 @@ where
         let executor_2 = executor_1.clone();
         let executor_3 = executor_1.clone();
 
+        // sj: Get channel buffer size from environment variable or use defaults
+        let channel_buffer_size = env::var("CHANNEL_BUFFER_SIZE")
+            .ok()
+            .and_then(|v| v.parse::<usize>().ok())
+            .unwrap_or(50); // default: 50
+
         let (raw_block_sender, raw_block_receiver) = mpsc::sync_channel::<Vec<Transaction>>(
             if config.generate_then_execute {
-                (num_blocks.unwrap() + 1).max(50)
+                (num_blocks.unwrap() + 1).max(channel_buffer_size)
             } else {
                 10
             }, /* bound */
@@ -93,7 +100,7 @@ where
         let (executable_block_sender, executable_block_receiver) =
             mpsc::sync_channel::<ExecuteBlockMessage>(
                 if config.split_stages {
-                    (num_blocks.unwrap() + 1).max(50)
+                    (num_blocks.unwrap() + 1).max(channel_buffer_size)
                 } else {
                     10
                 }, /* bound */

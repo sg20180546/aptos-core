@@ -27,7 +27,7 @@ echo "Using NUMBER_OF_EXECUTION_THREADS = $THREADS (found $VIRTUAL_CORES virtual
 THREADS=8
 
 NBPT=300
-HD=1
+HD=0
 EP=1
 
 # sj: Channel buffer size for memory optimization (OOM prevention)

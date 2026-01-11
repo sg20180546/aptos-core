@@ -13,6 +13,7 @@ run_benchmark() {
     ENABLE_PRUNER=$4\
     NUMBER_OF_EXECUTION_THREADS=$5\
     SKIP_MOVE_E2E=1\
+    CHANNEL_BUFFER_SIZE=$CHANNEL_BUFFER_SIZE\
     ./testsuite/single_node_performance.py
 }
 
@@ -29,7 +30,11 @@ NBPT=300
 HD=1
 EP=1
 
-
+# sj: Channel buffer size for memory optimization (OOM prevention)
+# Default: 20 (good balance between memory and performance)
+# Lower values = less memory but potentially slower
+# Higher values = more memory usage
+CHANNEL_BUFFER_SIZE=${CHANNEL_BUFFER_SIZE:-20}
 
 # Check for the flag
 if [ "$1" == "--short" ]; then

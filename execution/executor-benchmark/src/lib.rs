@@ -466,8 +466,22 @@ where
         num_pipeline_txns.unwrap_or_default()
     };
 
+    // sj: Print block generation statistics
+    let end_version = db.reader.expect_synced_version();
+    let total_blocks_created = end_version - start_version;
+    println!(
+        "\nBlock generation during benchmark: version {} to {} = {} blocks",
+        start_version, end_version - 1, total_blocks_created
+    );
+
     let overall_results =
         overall_measuring.elapsed("Overall".to_string(), "".to_string(), num_txns);
+
+    // Print blocks per second
+    if overall_results.elapsed > 0.0 {
+        println!("Blocks per second: {:.2}", total_blocks_created as f64 / overall_results.elapsed);
+    }
+
     overall_results.print_end();
 
     if !pipeline_config.skip_commit {

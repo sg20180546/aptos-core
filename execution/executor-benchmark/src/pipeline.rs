@@ -273,6 +273,7 @@ where
                                 "across all stages".to_string()
                             },
                             executed,
+                            0,  // sj: num_blocks not applicable for staged execution
                         )
                         .print_end();
                 }

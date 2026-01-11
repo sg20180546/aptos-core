@@ -478,8 +478,8 @@ where
         overall_measuring.elapsed("Overall".to_string(), "".to_string(), num_txns);
 
     // Print blocks per second
-    if overall_results.elapsed > 0.0 {
-        println!("Blocks per second: {:.2}", total_blocks_created as f64 / overall_results.elapsed);
+    if overall_results.get_elapsed() > 0.0 {
+        println!("Blocks per second: {:.2}", total_blocks_created as f64 / overall_results.get_elapsed());
     }
 
     overall_results.print_end();

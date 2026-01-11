@@ -288,6 +288,10 @@ pub struct OverallMeasurement {
 }
 
 impl OverallMeasurement {
+    pub fn get_elapsed(&self) -> f64 {
+        self.elapsed
+    }
+
     pub fn get_tps(&self) -> f64 {
         self.num_txns as f64 / self.elapsed
     }

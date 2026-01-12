@@ -477,6 +477,10 @@ impl OverallMeasurement {
             num_txns / self.delta_execution.commit_total_time
         );
 
+        //sj: Output block generation metrics
+        info!("{} num_blocks: {}", self.prefix, self.get_num_blocks());
+        info!("{} blocks/s: {:.2}", self.prefix, self.get_blocks_per_second());
+
         //sj: Output tail latency percentiles (in microseconds)
         //    get_all_latencies() combines all thread-local data at print time
         let mut all_latencies = block_executor_counters::get_all_latencies();

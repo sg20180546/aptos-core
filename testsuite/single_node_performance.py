@@ -436,6 +436,8 @@ class RunResults:
     # sj: Block generation metrics
     num_blocks: int = 0
     blocks_per_second: float = 0.0
+    # sj: Elapsed time in seconds
+    elapsed_time_secs: float = 0.0
 
 
 @dataclass
@@ -493,6 +495,8 @@ def extract_run_results(
     # sj: Initialize block generation metrics
     num_blocks = 0
     blocks_per_second = 0.0
+    # sj: Initialize elapsed time
+    elapsed_time_secs = 0.0
 
     if create_db:
         tps = float(
@@ -645,6 +649,12 @@ def extract_run_results(
         blocks_per_second_match = re.findall(prefix + r" blocks/s: (\d+\.?\d*)", output)
         if blocks_per_second_match:
             blocks_per_second = float(blocks_per_second_match[-1])
+
+        # sj: Extract elapsed time (in seconds, parsed from HH:MM:SS format)
+        elapsed_time_match = re.findall(prefix + r" Elapsed time: (\d+):(\d+):(\d+)", output)
+        if elapsed_time_match:
+            hours, minutes, seconds = map(int, elapsed_time_match[-1])
+            elapsed_time_secs = hours * 3600 + minutes * 60 + seconds
     except Exception as e:
         print(f"Warning: Failed to parse tail latencies: {e}")
 
@@ -680,6 +690,7 @@ def extract_run_results(
         p99_999_latency_us=p99_999_latency_us,
         num_blocks=num_blocks,  # sj: Number of blocks created
         blocks_per_second=blocks_per_second,  # sj: Block generation rate
+        elapsed_time_secs=elapsed_time_secs,  # sj: Elapsed time in seconds
     )
 
 
@@ -1090,6 +1101,7 @@ with tempfile.TemporaryDirectory() as tmpdirname:
                     # sj: Block generation metrics
                     "num_blocks": single_node_result.num_blocks,
                     "blocks_per_second": single_node_result.blocks_per_second,
+                    "elapsed_time_secs": single_node_result.elapsed_time_secs,
                     "code_perf_version": CODE_PERF_VERSION,
                     "flow": str(SELECTED_FLOW),
                     "test_index": test_index,

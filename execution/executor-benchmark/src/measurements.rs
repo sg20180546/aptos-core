@@ -302,6 +302,15 @@ impl OverallMeasurement {
         self.num_blocks as f64 / self.elapsed
     }
 
+    // sj: Format elapsed time in human readable format (HH:MM:SS)
+    pub fn get_elapsed_formatted(&self) -> String {
+        let total_secs = self.elapsed as u64;
+        let hours = total_secs / 3600;
+        let minutes = (total_secs % 3600) / 60;
+        let secs = total_secs % 60;
+        format!("{:02}:{:02}:{:02}", hours, minutes, secs)
+    }
+
     pub fn get_tps(&self) -> f64 {
         self.num_txns as f64 / self.elapsed
     }
@@ -477,7 +486,8 @@ impl OverallMeasurement {
             num_txns / self.delta_execution.commit_total_time
         );
 
-        //sj: Output block generation metrics
+        //sj: Output block generation metrics and elapsed time
+        info!("{} Elapsed time: {}", self.prefix, self.get_elapsed_formatted());
         info!("{} num_blocks: {}", self.prefix, self.get_num_blocks());
         info!("{} blocks/s: {:.2}", self.prefix, self.get_blocks_per_second());
 

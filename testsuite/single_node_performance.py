@@ -950,13 +950,15 @@ with tempfile.TemporaryDirectory() as tmpdirname:
         if test.key_extra.transaction_type_override == "":
             workload_args_str = ""
         else:
-            transaction_type_list = (
-                test.key_extra.transaction_type_override or test.key.transaction_type
+            # sj: For apt-fa-transfer-sj, use apt-fa-transfer as the actual transaction type
+            actual_transaction_type = (
+                test.key_extra.transaction_type_override or
+                ("apt-fa-transfer" if test.key.transaction_type == "apt-fa-transfer-sj" else test.key.transaction_type)
             )
             transaction_weights_list = (
                 test.key_extra.transaction_weights_override or "1"
             )
-            workload_args_str = f"--transaction-type {transaction_type_list} --transaction-weights {transaction_weights_list}"
+            workload_args_str = f"--transaction-type {actual_transaction_type} --transaction-weights {transaction_weights_list}"
 
         pipeline_extra_args = []
 

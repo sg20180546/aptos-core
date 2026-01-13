@@ -1015,7 +1015,9 @@ with tempfile.TemporaryDirectory() as tmpdirname:
         if test.key_extra.single_block_dst_working_set:
             additional_dst_pool_accounts = MAX_BLOCK_SIZE
         else:
-            additional_dst_pool_accounts = 2 * MAX_BLOCK_SIZE * NUM_BLOCKS
+            # sj: For time-based tests, use reasonable account pool size (don't multiply by 1000000)
+            accounts_multiplier = BLOCKS_FOR_ACCOUNT_CALC if BENCHMARK_DURATION_SECS > 0 else NUM_BLOCKS
+            additional_dst_pool_accounts = 2 * MAX_BLOCK_SIZE * accounts_multiplier
 
         common_command_suffix = f"{executor_type_str} {pipeline_extra_args_str} --block-size {cur_block_size} {DB_CONFIG_FLAGS} {DB_PRUNER_FLAGS} run-executor {FEATURE_FLAGS} {workload_args_str} --module-working-set-size {test.key.module_working_set_size} --main-signer-accounts {MAIN_SIGNER_ACCOUNTS} --additional-dst-pool-accounts {additional_dst_pool_accounts} --data-dir {tmpdirname}/db  --checkpoint-dir {tmpdirname}/cp"
 

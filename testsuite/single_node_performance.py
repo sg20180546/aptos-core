@@ -944,7 +944,7 @@ with tempfile.TemporaryDirectory() as tmpdirname:
 
         # sj: Detect time-based benchmarks
         is_time_based = test.key.transaction_type == "apt-fa-transfer-sj"
-        benchmark_duration = 1200 if is_time_based else 0
+        benchmark_duration = 530 if is_time_based else 0
 
         print(f"Testing {test.key}")
         if test.key_extra.transaction_type_override == "":

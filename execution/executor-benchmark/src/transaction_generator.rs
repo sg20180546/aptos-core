@@ -47,6 +47,7 @@ use std::{
         atomic::{AtomicUsize, Ordering},
         mpsc, Arc, Mutex,
     },
+    time::{Duration, Instant},
 };
 use thread_local::ThreadLocal;
 
@@ -395,6 +396,7 @@ impl TransactionGenerator {
         &mut self,
         block_size: usize,
         num_transfer_blocks: usize,
+        benchmark_duration_secs: Option<u64>,
         transactions_per_sender: usize,
         connected_tx_grps: usize,
         shuffle_connected_txns: bool,
@@ -404,6 +406,7 @@ impl TransactionGenerator {
         self.gen_transfer_transactions(
             block_size,
             num_transfer_blocks,
+            benchmark_duration_secs,
             transactions_per_sender,
             connected_tx_grps,
             shuffle_connected_txns,
@@ -416,10 +419,15 @@ impl TransactionGenerator {
         &mut self,
         block_size: usize,
         num_blocks: usize,
+        benchmark_duration_secs: Option<u64>,
         transaction_generators: Vec<Box<dyn aptos_transaction_generator_lib::TransactionGenerator>>,
         phase: Arc<AtomicUsize>,
         transactions_per_sender: usize,
     ) -> usize {
+        // sj: Time-based termination setup
+        let start_time = Instant::now();
+        let duration_limit = benchmark_duration_secs.map(Duration::from_secs);
+
         let last_non_empty_phase = Arc::new(AtomicUsize::new(0));
         let transaction_generators = Mutex::new(transaction_generators);
         assert!(self.block_sender.is_some());
@@ -427,6 +435,15 @@ impl TransactionGenerator {
         let account_pool_size = self.main_signer_accounts.as_ref().unwrap().accounts.len();
         let transaction_generator = ThreadLocal::with_capacity(self.num_workers);
         for i in 0..num_blocks {
+            // sj: Check time limit before generating block
+            if let Some(limit) = duration_limit {
+                if start_time.elapsed() >= limit {
+                    info!("Time limit reached: {} seconds, generated {} blocks",
+                          limit.as_secs(), i);
+                    return i;
+                }
+            }
+
             let sender_indices = rand::seq::index::sample(
                 &mut thread_rng(),
                 account_pool_size,
@@ -589,9 +606,23 @@ impl TransactionGenerator {
         &mut self,
         block_size: usize,
         num_blocks: usize,
+        benchmark_duration_secs: Option<u64>,
         transactions_per_sender: usize,
     ) {
-        for _ in 0..num_blocks {
+        // sj: Time-based termination setup
+        let start_time = Instant::now();
+        let duration_limit = benchmark_duration_secs.map(Duration::from_secs);
+
+        for i in 0..num_blocks {
+            // sj: Check time limit before generating block
+            if let Some(limit) = duration_limit {
+                if start_time.elapsed() >= limit {
+                    info!("Time limit reached: {} seconds, generated {} blocks",
+                          limit.as_secs(), i);
+                    return;
+                }
+            }
+
             let transfer_indices =
                 self.get_random_transfer_indices(block_size, transactions_per_sender);
             self.generate_and_send_transfer_block(
@@ -633,10 +664,24 @@ impl TransactionGenerator {
         &mut self,
         block_size: usize,
         num_blocks: usize,
+        benchmark_duration_secs: Option<u64>,
         hotspot_probability: f32,
     ) {
+        // sj: Time-based termination setup
+        let start_time = Instant::now();
+        let duration_limit = benchmark_duration_secs.map(Duration::from_secs);
+
         assert!((0.5..1.0).contains(&hotspot_probability));
-        for _ in 0..num_blocks {
+        for i in 0..num_blocks {
+            // sj: Check time limit before generating block
+            if let Some(limit) = duration_limit {
+                if start_time.elapsed() >= limit {
+                    info!("Time limit reached: {} seconds, generated {} blocks",
+                          limit.as_secs(), i);
+                    return;
+                }
+            }
+
             let transfer_indices =
                 self.get_random_with_hotspot_transfer_indices(block_size, hotspot_probability);
             self.generate_and_send_transfer_block(
@@ -735,10 +780,24 @@ impl TransactionGenerator {
         &mut self,
         block_size: usize,
         num_blocks: usize,
+        benchmark_duration_secs: Option<u64>,
         connected_tx_grps: usize,
         shuffle_connected_txns: bool,
     ) {
-        for _ in 0..num_blocks {
+        // sj: Time-based termination setup
+        let start_time = Instant::now();
+        let duration_limit = benchmark_duration_secs.map(Duration::from_secs);
+
+        for i in 0..num_blocks {
+            // sj: Check time limit before generating block
+            if let Some(limit) = duration_limit {
+                if start_time.elapsed() >= limit {
+                    info!("Time limit reached: {} seconds, generated {} blocks",
+                          limit.as_secs(), i);
+                    return;
+                }
+            }
+
             let num_signer_accounts = self.main_signer_accounts.as_ref().unwrap().accounts.len();
             let rng = &mut self.main_signer_accounts.as_mut().unwrap().rng;
             let transfer_indices: Vec<_> =
@@ -864,6 +923,7 @@ impl TransactionGenerator {
         &mut self,
         block_size: usize,
         num_blocks: usize,
+        benchmark_duration_secs: Option<u64>,
         transactions_per_sender: usize,
         connected_tx_grps: usize,
         shuffle_connected_txns: bool,
@@ -879,6 +939,7 @@ impl TransactionGenerator {
             self.gen_connected_grps_transfer_transactions(
                 block_size,
                 num_blocks,
+                benchmark_duration_secs,
                 connected_tx_grps,
                 shuffle_connected_txns,
             );
@@ -888,12 +949,13 @@ impl TransactionGenerator {
             self.gen_random_transfers_with_hotspot(
                 block_size,
                 num_blocks,
+                benchmark_duration_secs,
                 hotspot_probability.unwrap(),
             );
         } else {
             info!("block_generation_mode=default_sample");
             info!("transactions_per_sender={transactions_per_sender}");
-            self.gen_random_transfer_transactions(block_size, num_blocks, transactions_per_sender);
+            self.gen_random_transfer_transactions(block_size, num_blocks, benchmark_duration_secs, transactions_per_sender);
         }
     }
 

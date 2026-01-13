@@ -62,6 +62,8 @@ DEFAULT_MAX_BLOCK_SIZE = "10000"
 MAX_BLOCK_SIZE = int(os.environ.get("MAX_BLOCK_SIZE", default=DEFAULT_MAX_BLOCK_SIZE))
 NUM_BLOCKS = int(os.environ.get("NUM_BLOCKS_PER_TEST", default=30))
 NUM_BLOCKS_DETAILED = 10
+# sj: Benchmark duration for time-based tests (0 = disabled, use block count)
+BENCHMARK_DURATION_SECS = int(os.environ.get("BENCHMARK_DURATION_SECS", default=0))
 NUM_ACCOUNTS = max(
     [
         int(os.environ.get("NUM_INIT_ACCOUNTS", default=DEFAULT_NUM_INIT_ACCOUNTS)),
@@ -188,6 +190,8 @@ TESTS = [
     RunGroupConfig(key=RunGroupKey("no-op", module_working_set_size=1000), included_in=LAND_BLOCKING_AND_C),
     # sj
     RunGroupConfig(key=RunGroupKey("apt-fa-transfer"), included_in=LAND_BLOCKING_AND_C | Flow.REPRESENTATIVE | Flow.MAINNET),
+    # sj: Time-based benchmark (1200 seconds)
+    RunGroupConfig(key=RunGroupKey("apt-fa-transfer-sj"), included_in=Flow.ADHOC),
     # RunGroupConfig(key=RunGroupKey("account-generation"), included_in=LAND_BLOCKING_AND_C | Flow.REPRESENTATIVE | Flow.MAINNET),
     # RunGroupConfig(key=RunGroupKey("publish-package"), included_in=LAND_BLOCKING_AND_C | Flow.REPRESENTATIVE | Flow.MAINNET),
     # RunGroupConfig(key=RunGroupKey("token-v2-ambassador-mint"), included_in=LAND_BLOCKING_AND_C | Flow.REPRESENTATIVE | Flow.MAINNET),
@@ -936,6 +940,10 @@ with tempfile.TemporaryDirectory() as tmpdirname:
                 4, int(min([criteria.expected_tps / 4, MAX_BLOCK_SIZE]))
             )
 
+        # sj: Detect time-based benchmarks
+        is_time_based = test.key.transaction_type == "apt-fa-transfer-sj"
+        benchmark_duration = 1200 if is_time_based else 0
+
         print(f"Testing {test.key}")
         if test.key_extra.transaction_type_override == "":
             workload_args_str = ""
@@ -1010,14 +1018,18 @@ with tempfile.TemporaryDirectory() as tmpdirname:
         number_of_threads_results = {}
 
         for execution_threads in EXECUTION_ONLY_NUMBER_OF_THREADS:
-            test_db_command = f"RUST_BACKTRACE=1 {BUILD_FOLDER}/aptos-executor-benchmark --execution-threads {execution_threads} --skip-commit {common_command_suffix} --blocks {NUM_BLOCKS_DETAILED}"
+            duration_env = f"BENCHMARK_DURATION_SECS={benchmark_duration}" if benchmark_duration > 0 else ""
+            test_db_command = f"{duration_env} RUST_BACKTRACE=1 {BUILD_FOLDER}/aptos-executor-benchmark --execution-threads {execution_threads} --skip-commit {common_command_suffix} --blocks {NUM_BLOCKS_DETAILED}"
             output = execute_command(test_db_command)
 
             number_of_threads_results[execution_threads] = extract_run_results(
                 output, "Overall execution"
             )
 
-        test_db_command = f"RUST_BACKTRACE=1 {BUILD_FOLDER}/aptos-executor-benchmark --execution-threads {number_of_execution_threads} {common_command_suffix} --blocks {NUM_BLOCKS}"
+        # sj: For time-based tests, use large NUM_BLOCKS and exit via duration limit
+        actual_num_blocks = 1000000 if is_time_based else NUM_BLOCKS
+        duration_env = f"BENCHMARK_DURATION_SECS={benchmark_duration}" if benchmark_duration > 0 else ""
+        test_db_command = f"{duration_env} RUST_BACKTRACE=1 {BUILD_FOLDER}/aptos-executor-benchmark --execution-threads {number_of_execution_threads} {common_command_suffix} --blocks {actual_num_blocks}"
         output = execute_command(test_db_command)
 
         single_node_result = extract_run_results(output, "Overall")

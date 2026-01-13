@@ -280,6 +280,7 @@ enum InitializedBenchmarkWorkload {
 pub fn run_benchmark<V>(
     block_size: usize,
     num_blocks: usize,
+    benchmark_duration_secs: Option<u64>,
     workload: BenchmarkWorkload,
     mut transactions_per_sender: usize,
     num_main_signer_accounts: usize,
@@ -427,6 +428,7 @@ where
             let num_blocks_created = generator.run_workload(
                 block_size,
                 num_blocks,
+                benchmark_duration_secs,
                 transaction_generators,
                 phase,
                 transactions_per_sender,
@@ -441,6 +443,7 @@ where
             let num_blocks_created = generator.run_transfer(
                 block_size,
                 num_blocks,
+                benchmark_duration_secs,
                 transactions_per_sender,
                 connected_tx_grps,
                 shuffle_connected_txns,

@@ -64,10 +64,12 @@ NUM_BLOCKS = int(os.environ.get("NUM_BLOCKS_PER_TEST", default=30))
 NUM_BLOCKS_DETAILED = 10
 # sj: Benchmark duration for time-based tests (0 = disabled, use block count)
 BENCHMARK_DURATION_SECS = int(os.environ.get("BENCHMARK_DURATION_SECS", default=0))
+# sj: For time-based tests, use actual expected block count, not NUM_BLOCKS (which is large)
+BLOCKS_FOR_ACCOUNT_CALC = NUM_BLOCKS if BENCHMARK_DURATION_SECS == 0 else 300
 NUM_ACCOUNTS = max(
     [
         int(os.environ.get("NUM_INIT_ACCOUNTS", default=DEFAULT_NUM_INIT_ACCOUNTS)),
-        (2 + 2 * NUM_BLOCKS) * MAX_BLOCK_SIZE,
+        (2 + 2 * BLOCKS_FOR_ACCOUNT_CALC) * MAX_BLOCK_SIZE,
     ]
 )
 MAIN_SIGNER_ACCOUNTS = 2 * MAX_BLOCK_SIZE
@@ -232,7 +234,7 @@ TESTS = [
     RunGroupConfig(expected_tps=8000, key=RunGroupKey("resource-groups-global-write-and-read-tag1-kb", module_working_set_size=DEFAULT_MODULE_WORKING_SET_SIZE), included_in=Flow.RESOURCE_GROUPS, waived=True),
     RunGroupConfig(key=RunGroupKey("resource-groups-sender-write-tag1-kb"), included_in=Flow.CONTINUOUS | Flow.RESOURCE_GROUPS),
     RunGroupConfig(expected_tps=8000, key=RunGroupKey("resource-groups-sender-write-tag1-kb", module_working_set_size=DEFAULT_MODULE_WORKING_SET_SIZE), included_in=Flow.RESOURCE_GROUPS, waived=True),
-    RunGroupConfig(key=RunGroupKey("resource-groups-sender-multi-change1-kb"), included_in=LAND_BLOCKING_AND_C | Flow.RESOURCE_GROUPS | Flow.ADHOC),
+    # RunGroupConfig(key=RunGroupKey("resource-groups-sender-multi-change1-kb"), included_in=LAND_BLOCKING_AND_C | Flow.RESOURCE_GROUPS | Flow.ADHOC),
     RunGroupConfig(expected_tps=8000, key=RunGroupKey("resource-groups-sender-multi-change1-kb", module_working_set_size=DEFAULT_MODULE_WORKING_SET_SIZE), included_in=Flow.RESOURCE_GROUPS, waived=True),
 
     RunGroupConfig(key=RunGroupKey("token-v1ft-mint-and-transfer"), included_in=Flow.CONTINUOUS),

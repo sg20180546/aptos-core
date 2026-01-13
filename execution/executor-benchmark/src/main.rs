@@ -550,6 +550,7 @@ where
             aptos_executor_benchmark::run_benchmark::<E>(
                 opt.block_size,
                 blocks,
+                None, /* benchmark_duration_secs */
                 workload,
                 opt.transactions_per_sender,
                 main_signer_accounts,

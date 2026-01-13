@@ -547,10 +547,15 @@ where
                 }
             }
 
+            // sj: Read benchmark duration from environment variable
+            let benchmark_duration_secs = std::env::var("BENCHMARK_DURATION_SECS")
+                .ok()
+                .and_then(|v| v.parse::<u64>().ok());
+
             aptos_executor_benchmark::run_benchmark::<E>(
                 opt.block_size,
                 blocks,
-                None, /* benchmark_duration_secs */
+                benchmark_duration_secs,
                 workload,
                 opt.transactions_per_sender,
                 main_signer_accounts,

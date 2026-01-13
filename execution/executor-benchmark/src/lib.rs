@@ -910,6 +910,7 @@ pub fn run_single_with_default_params(
     run_benchmark::<AptosVMBlockExecutor>(
         benchmark_block_size, /* block_size */
         num_blocks,           /* num_blocks */
+        None,                 /* benchmark_duration_secs */
         BenchmarkWorkload::TransactionMix(vec![(transaction_type, 1)]),
         1, /* transactions per sender */
         num_main_signer_accounts,
